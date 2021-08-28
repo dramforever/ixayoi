@@ -60,7 +60,7 @@ typedef struct {
 
 (* synthesize *)
 module mkCpu(Cpu);
-    Slice#(ControlDecode)   decodeFIFO <- mkSlice;
+    FIFO#(ControlDecode)    decodeFIFO <- mkFIFO;
     Slice#(ControlExecute)  executeFIFO <- mkSlice;
     Slice#(ControlMem)      memFIFO <- mkSlice;
     Slice#(ControlMem)      loadFIFO <- mkSlice;
@@ -90,7 +90,6 @@ module mkCpu(Cpu);
         fetchReqFIFO.enq(fetchPc);
     endrule
 
-    (* execution_order = "fetchRespRule, fetchReqRule" *)
     rule fetchRespRule;
         fetchRespFIFO.deq;
         if (inFlight.first == realPc) begin
