@@ -81,7 +81,7 @@ module mkCpu(Cpu);
     Reg#(Word)  fetchPc <- mkReg('hd000_0000);
     Reg#(Word)  realPc <- mkReg('hd000_0000);
 
-    FIFO#(Word) inFlight <- mkSizedFIFO(16);
+    FIFO#(Word) inFlight <- mkSizedFIFO(4);
 
     rule fetchReqRule;
         $display("[%9d] [%08h] [ A . . . . . . ] fetch req", $time, fetchPc);
