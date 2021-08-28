@@ -2,9 +2,19 @@
 
 *(This is a work in progress)*
 
-A relatively simple pipelined RISC-V core, written in [Bluespec SystemVerilog][bsv].
+A relatively simple pipelined RISC-V core, written in [Bluespec SystemVerilog][bsc].
 
-[bsv]: https://github.com/B-Lang-org/bsc
+[bsc]: https://github.com/B-Lang-org/bsc
+
+## Build instructions
+
+Requires [Bluespec Compiler][bsc] and GNU Make.
+
+```console
+$ mkdir build
+$ make -f ../Makefile -C build sim              # Run simulation
+$ make -f ../Makefile -C build ixayoi_axi_bsv.v # Generating Verilog
+```
 
 ## Design
 
