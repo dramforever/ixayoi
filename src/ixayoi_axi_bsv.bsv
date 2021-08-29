@@ -11,6 +11,9 @@ interface IxayoiAxi;
 
     (* prefix = "md_axi" *)
     interface AxiLiteMaster#(Word, Word, BStrb)     dbus;
+
+    (* always_ready *)
+    method UInt#(64) instret;
 endinterface
 
 function Action enableAction(Bool con, Action act);
@@ -122,4 +125,5 @@ module ixayoi_axi_bsv(IxayoiAxi);
         interface write = ibusWriteFIFO;
     endinterface;
 
+    method instret = cpu.instret;
 endmodule

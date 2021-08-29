@@ -23,7 +23,8 @@ interface Cpu;
     method ActionValue#(BusReq) memReq;
     method Action memResp(Word data);
 
-    method Word instrCount;
+    (* always_ready *)
+    method UInt#(64) instret;
 endinterface
 
 typedef struct {
@@ -74,7 +75,7 @@ module mkCpu(Cpu);
     FIFO#(BusReq)           memReqFIFO <- mkBypassFIFO;
     FIFO#(Word)             memRespFIFO <- mkBypassFIFO;
 
-    Reg#(Word)              instrCounter <- mkReg('d0);
+    Reg#(UInt#(64))         instretCounter <- mkReg('d0);
 
     // Fetch stage
 
@@ -380,7 +381,7 @@ module mkCpu(Cpu);
         end else begin
             $display("[%9d] [%08h] [ . . . . . . W ] wb nothing", $time, writeInp.npc);
         end
-        instrCounter <= instrCounter + 1;
+        instretCounter <= instretCounter + 1;
     endrule
 
     method ActionValue#(Word) fetchReq;
@@ -397,5 +398,5 @@ module mkCpu(Cpu);
 
     method Action memResp(Word data) = memRespFIFO.enq(data);
 
-    method instrCount = instrCounter._read;
+    method instret = instretCounter._read;
 endmodule

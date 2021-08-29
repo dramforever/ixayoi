@@ -24,7 +24,9 @@ module ixayoi_axi(
     md_axi_rready,
     md_axi_rvalid,
     md_axi_rdata,
-    md_axi_rresp
+    md_axi_rresp,
+
+    instret
 );
     (* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 clk CLK" *)
     (* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF MI:MD, ASSOCIATED_RESET resetn" *)
@@ -62,6 +64,8 @@ module ixayoi_axi(
     (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 MD RDATA" *)      input  [31 : 0] md_axi_rdata;
     (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 MD RRESP" *)      input  [1 : 0] md_axi_rresp;
 
+    output [63 : 0] instret;
+
     ixayoi_axi_bsv ixayoi_axi_bsv_i (
         .CLK(clk), .RST_N(resetn),
         .mi_axi_araddr(mi_axi_araddr),
@@ -87,7 +91,8 @@ module ixayoi_axi(
         .md_axi_rready(md_axi_rready),
         .md_axi_rvalid(md_axi_rvalid),
         .md_axi_rdata(md_axi_rdata),
-        .md_axi_rresp(md_axi_rresp)
+        .md_axi_rresp(md_axi_rresp),
+        .instret(instret)
     );
 
 endmodule
