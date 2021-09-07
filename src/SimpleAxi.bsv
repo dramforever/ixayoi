@@ -75,7 +75,7 @@ typedef enum {
 } AXBurst
     deriving (FShow, Bits);
 
-typedef Bit#(3) AXLen;
+typedef Bit#(8) AXLen;
 
 typedef struct {
     addr_t      addr;

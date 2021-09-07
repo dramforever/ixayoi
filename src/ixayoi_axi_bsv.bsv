@@ -4,6 +4,7 @@ import FIFOF::*;
 import Types::*;
 import SimpleAxi::*;
 import Cpu::*;
+import InstrCache::*;
 
 interface IxayoiAxi;
     (* prefix = "mi_axi" *)
@@ -92,6 +93,7 @@ endmodule
 (* synthesize *)
 module ixayoi_axi_bsv(IxayoiAxi);
     Cpu cpu <- mkCpu;
+    InstrCache icache <- mkInstrCache;
 
     FIFOF#(RReq#(Word))         i_ar    <- mkGFIFOF(False, True);
     FIFOF#(RResp#(Word))        i_r     <- mkGFIFOF(True, False);
@@ -108,16 +110,22 @@ module ixayoi_axi_bsv(IxayoiAxi);
 
     rule handleFetchReq;
         let req <- cpu.fetchReq;
-        i_ar.enq(RReq {
-            addr: req,
-            burst: BurstIncr,
-            len: 0
-        });
+        icache.fetchReq(req);
     endrule
 
     rule handleFetchResp;
+        let resp <- icache.fetchResp;
+        cpu.fetchResp(resp);
+    endrule
+
+    rule handleAxiReq;
+        let req <- icache.axiReq;
+        i_ar.enq(req);
+    endrule
+
+    rule handleAxiResp;
         i_r.deq;
-        cpu.fetchResp(i_r.first.data);
+        icache.axiResp(i_r.first);
     endrule
 
     FIFO#(Bool)     isWriteFIFO <- mkSizedFIFO(16);
