@@ -67,3 +67,40 @@ interface AxiLiteMaster#(type addr_t, type data_t, type strb_t);
     (* prefix = "" *)
     interface AxiLiteMasterRead#(addr_t, data_t) read;
 endinterface
+
+typedef enum {
+    BurstFixed  = 2'b00,
+    BurstIncr   = 2'b01,
+    BurstWrap   = 2'b10
+} AXBurst
+    deriving (FShow, Bits);
+
+typedef Bit#(3) AXLen;
+
+typedef struct {
+    addr_t      addr;
+    AXBurst     burst;
+    AXLen       len;
+} RReq#(type addr_t)
+    deriving (FShow, Bits);
+
+interface AxiBurstMasterRead#(type addr_t, type data_t);
+    (* always_ready *) method addr_t    araddr;
+    (* always_ready *) method AXBurst   arburst;
+    (* always_ready *) method AXLen     arlen;
+    (* always_ready *) method Bool      arvalid;
+    (* prefix = "" *)
+    (* always_ready, always_enabled *)
+    method Action                       arready     ((* port = "arready" *) Bool data);
+
+    (* always_ready *) method Bool      rready;
+    (* prefix = "" *)
+    (* always_ready, always_enabled *)
+    method Action                       rvalid      ((* port = "rvalid" *) Bool data);
+    (* prefix = "" *)
+    (* always_ready, always_enabled *)
+    method Action                       rdata       ((* port = "rdata" *) data_t data);
+    (* prefix = "" *)
+    (* always_ready, always_enabled *)
+    method Action                       rresp       ((* port = "rresp" *) XResp data);
+endinterface

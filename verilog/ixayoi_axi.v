@@ -1,7 +1,9 @@
-module ixayoi_axi(
+module ixayoi_axi (
     clk, resetn,
 
     mi_axi_araddr,
+    mi_axi_arlen,
+    mi_axi_arburst,
     mi_axi_arvalid,
     mi_axi_arready,
     mi_axi_rready,
@@ -36,10 +38,13 @@ module ixayoi_axi(
     (* X_INTERFACE_PARAMETER = "POLARITY ACTIVE_LOW" *)
     input  resetn;
 
-    (* X_INTERFACE_PARAMETER = "PROTOCOL AXI4LITE, READ_WRITE_MODE READ_ONLY" *)
+    (* X_INTERFACE_PARAMETER = "PROTOCOL AXI4, READ_WRITE_MODE READ_WRITE, NUM_READ_OUTSTANDING 16" *)
     (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 MI ARADDR" *)     output [31 : 0] mi_axi_araddr;
     (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 MI ARVALID" *)    output mi_axi_arvalid;
     (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 MI ARREADY" *)    input  mi_axi_arready;
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 MI ARLEN" *)      output [7 : 0] mi_axi_arlen;
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 MI ARBURST" *)    output [1 : 0] mi_axi_arburst;
+
     (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 MI RREADY" *)     output mi_axi_rready;
     (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 MI RVALID" *)     input  mi_axi_rvalid;
     (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 MI RDATA" *)      input  [31 : 0] mi_axi_rdata;
@@ -69,6 +74,8 @@ module ixayoi_axi(
     ixayoi_axi_bsv ixayoi_axi_bsv_i (
         .CLK(clk), .RST_N(resetn),
         .mi_axi_araddr(mi_axi_araddr),
+        .mi_axi_arlen(mi_axi_arlen),
+        .mi_axi_arburst(mi_axi_arburst),
         .mi_axi_arvalid(mi_axi_arvalid),
         .mi_axi_arready(mi_axi_arready),
         .mi_axi_rready(mi_axi_rready),

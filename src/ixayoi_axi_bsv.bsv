@@ -2,12 +2,12 @@ import FIFO::*;
 import FIFOF::*;
 
 import Types::*;
-import AxiLite::*;
+import SimpleAxi::*;
 import Cpu::*;
 
 interface IxayoiAxi;
     (* prefix = "mi_axi" *)
-    interface AxiLiteMasterRead#(Word, Word)        ibus;
+    interface AxiBurstMasterRead#(Word, Word)        ibus;
 
     (* prefix = "md_axi" *)
     interface AxiLiteMaster#(Word, Word, BStrb)     dbus;
@@ -21,6 +21,29 @@ action
     if (con) act;
 endaction
 endfunction
+
+module mkAxiBurstMasterReadFIFO(
+    FIFOF#(RReq#(addr_t)) arFIFO,
+    FIFOF#(RResp#(data_t)) rFIFO,
+    AxiBurstMasterRead#(addr_t, data_t) ifc
+)
+    provisos ( Bits#(data_t, nb_data_t) );
+
+    Wire#(data_t)   rdataWire <- mkBypassWire;
+    Wire#(XResp)    rrespWire <- mkBypassWire;
+    function r = RResp { data: rdataWire, resp: rrespWire };
+
+    method araddr = arFIFO.first.addr;
+    method arburst = arFIFO.first.burst;
+    method arlen = arFIFO.first.len;
+    method arvalid = arFIFO.notEmpty;
+    method arready(data) = enableAction(data && arFIFO.notEmpty, arFIFO.deq);
+
+    method rready = rFIFO.notFull;
+    method rdata(data) = rdataWire._write(data);
+    method rresp(data) = rrespWire._write(data);
+    method rvalid(data) = enableAction(data && rFIFO.notFull, rFIFO.enq(r));
+endmodule
 
 module mkAxiLiteMasterReadFIFO(
     FIFOF#(addr_t) arFIFO,
@@ -70,7 +93,7 @@ endmodule
 module ixayoi_axi_bsv(IxayoiAxi);
     Cpu cpu <- mkCpu;
 
-    FIFOF#(Word)                i_ar    <- mkGFIFOF(False, True);
+    FIFOF#(RReq#(Word))         i_ar    <- mkGFIFOF(False, True);
     FIFOF#(RResp#(Word))        i_r     <- mkGFIFOF(True, False);
 
     FIFOF#(Word)                d_ar    <- mkGFIFOF(False, True);
@@ -79,13 +102,17 @@ module ixayoi_axi_bsv(IxayoiAxi);
     FIFOF#(RResp#(Word))        d_r     <- mkGFIFOF(True, False);
     FIFOF#(XResp)               d_b     <- mkGFIFOF(True, False);
 
-    AxiLiteMasterRead#(Word, Word) ibusFIFO <- mkAxiLiteMasterReadFIFO(i_ar, i_r);
+    AxiBurstMasterRead#(Word, Word) ibusFIFO <- mkAxiBurstMasterReadFIFO(i_ar, i_r);
     AxiLiteMasterRead#(Word, Word) ibusReadFIFO <- mkAxiLiteMasterReadFIFO(d_ar, d_r);
     AxiLiteMasterWrite#(Word, Word, BStrb) ibusWriteFIFO <- mkAxiLiteMasterWriteFIFO(d_aw, d_w, d_b);
 
     rule handleFetchReq;
         let req <- cpu.fetchReq;
-        i_ar.enq(req);
+        i_ar.enq(RReq {
+            addr: req,
+            burst: BurstIncr,
+            len: 0
+        });
     endrule
 
     rule handleFetchResp;
