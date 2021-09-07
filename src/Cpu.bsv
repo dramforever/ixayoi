@@ -7,6 +7,7 @@ import Instr::*;
 import Slice::*;
 import Alu::*;
 import CpuRegFile::*;
+import DropCounter::*;
 
 typedef struct {
     Word    addr;
@@ -82,18 +83,19 @@ module mkCpu(Cpu);
     Reg#(Word)  fetchPc <- mkReg('hd000_0000);
     Reg#(Word)  realPc <- mkReg('hd000_0000);
 
-    FIFO#(Word) inFlight <- mkSizedFIFO(4);
+    DropCounter#(UInt#(5)) dropCounter <- mkDropCounter;
 
     rule fetchReqRule;
         $display("[%9d] [%08h] [ A . . . . . . ] fetch req", $time, fetchPc);
         fetchPc <= fetchPc + 4;
-        inFlight.enq(fetchPc);
+        dropCounter.request;
         fetchReqFIFO.enq(fetchPc);
     endrule
 
     rule fetchRespRule;
         fetchRespFIFO.deq;
-        if (inFlight.first == realPc) begin
+        let keep <- dropCounter.response;
+        if (keep) begin
             $display("[%9d] [%08h] [ . F . . . . . ] fetch resp %08h", $time, realPc, fetchRespFIFO.first);
             decodeFIFO.enq(ControlDecode {
                 instr: fetchRespFIFO.first,
@@ -101,7 +103,6 @@ module mkCpu(Cpu);
             });
             realPc <= realPc + 4;
         end
-        inFlight.deq;
     endrule
 
     // Decode stage
@@ -200,6 +201,8 @@ module mkCpu(Cpu);
             exResult: exInp.npc + 4,
             rs2Val: ?
         });
+
+        dropCounter.flush;
     endrule
 
     (* preempts = "executeJalr, (fetchReqRule, fetchRespRule)" *)
@@ -220,6 +223,8 @@ module mkCpu(Cpu);
             exResult: exInp.npc + 4,
             rs2Val: ?
         });
+
+        dropCounter.flush;
     endrule
 
     function branchTaken =
@@ -243,6 +248,8 @@ module mkCpu(Cpu);
             exResult: ?,
             rs2Val: ?
         });
+
+        dropCounter.flush;
     endrule
 
     rule executeBranchNotTaken (exDec.run == RunBranch && ! branchTaken);

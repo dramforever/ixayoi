@@ -38,7 +38,7 @@ module ixayoi_axi (
     (* X_INTERFACE_PARAMETER = "POLARITY ACTIVE_LOW" *)
     input  resetn;
 
-    (* X_INTERFACE_PARAMETER = "PROTOCOL AXI4, READ_WRITE_MODE READ_WRITE, NUM_READ_OUTSTANDING 16" *)
+    (* X_INTERFACE_PARAMETER = "PROTOCOL AXI4, READ_WRITE_MODE READ_WRITE, NUM_READ_OUTSTANDING 4" *)
     (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 MI ARADDR" *)     output [31 : 0] mi_axi_araddr;
     (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 MI ARVALID" *)    output mi_axi_arvalid;
     (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 MI ARREADY" *)    input  mi_axi_arready;
