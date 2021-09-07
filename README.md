@@ -42,8 +42,17 @@ interface Cpu;
 endinterface
 ```
 
-A wrapper, `src/ixayoi_axi_bsv.bsv`, wraps around this interface to provide two AXI4-Lite interfaces. Yet another wrapper `verilog/ixayoi_axi.v` has ports with `X_INTERFACE_INFO` and `X_INTERFACE_PARAMETER` attributes for use in other block designs in Vivado IP Integrator. Note that since this interface cannot perform burst requests, its efficiency is significantly limited.
+An instruction cache module, `mkInstrCache`, can handle raw fetch requests from the pipeline and, when needed, send out burst requests to an AXI bus.
+
+A wrapper, `src/ixayoi_axi_bsv.bsv`, wraps around the two to provide one AXI4 interface for instruction memory access and one AXI4-Lite interface for data memory access. Yet another wrapper `verilog/ixayoi_axi.v` has ports with `X_INTERFACE_INFO` and `X_INTERFACE_PARAMETER` attributes for use in other block designs in Vivado IP Integrator.
 
 # About the name
 
 '*Ixayoi*' (pronounced *i-za-yo-i*, /izajo.i/) is the name of this project. It *may* have come from a certain <ruby>十六夜 <rp>(</rp><rt>いざよい</rt><rp>)</rp>.
+
+# Todo list
+
+- [X] L1 I-cache and `fence.i`
+- [ ] CSR
+- [ ] Interrupts, `ecall` and `ebreak`
+- [ ] Error handling (Bus error / Invalid instruction)
