@@ -20,7 +20,7 @@ _start:
 .global main
 main:
     call print
-    li a0, 100000000 / 7 # Account for branch penalty
+    li a0, 100 * 1000 * 1000 / 7 # Branch penalty
     call waste
     j main
 
