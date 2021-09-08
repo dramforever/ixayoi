@@ -48,7 +48,6 @@ typedef struct {
 
     Word    npc;
     Word    exResult;
-    Word    rs2Val;
 } ControlMem
     deriving (FShow, Bits);
 
@@ -65,7 +64,6 @@ module mkCpu(Cpu);
     FIFO#(ControlDecode)    decodeFIFO <- mkFIFO;
     Slice#(ControlExecute)  executeFIFO <- mkSlice;
     Slice#(ControlMem)      memFIFO <- mkSlice;
-    Slice#(ControlMem)      loadFIFO <- mkSlice;
     Slice#(ControlWrite)    writeFIFO <- mkSlice;
 
     CpuRegFile              regFile <- mkCpuRegFile;
@@ -86,7 +84,7 @@ module mkCpu(Cpu);
     DropCounter#(UInt#(5)) dropCounter <- mkDropCounter;
 
     rule fetchReqRule;
-        $display("[%9d] [%08h] [ A . . . . . . ] fetch req", $time, fetchPc);
+        $display("[%9d] [%08h] [ A . . . . . ] fetch req", $time, fetchPc);
         fetchPc <= fetchPc + 4;
         dropCounter.request;
         fetchReqFIFO.enq(fetchPc);
@@ -96,7 +94,7 @@ module mkCpu(Cpu);
         fetchRespFIFO.deq;
         let keep <- dropCounter.response;
         if (keep) begin
-            $display("[%9d] [%08h] [ . F . . . . . ] fetch resp %08h", $time, realPc, fetchRespFIFO.first);
+            $display("[%9d] [%08h] [ . F . . . . ] fetch resp %08h", $time, realPc, fetchRespFIFO.first);
             decodeFIFO.enq(ControlDecode {
                 instr: fetchRespFIFO.first,
                 npc: realPc
@@ -113,16 +111,6 @@ module mkCpu(Cpu);
         if (writeFIFO.peek matches tagged Valid .item) begin
             if (item.write && item.regNum == rn)
                 result = tagged Valid item.data;
-        end
-
-        // TODO: Refactor this
-        if (loadFIFO.peek matches tagged Valid .item) begin
-            if (item.decoded.rdNum == rn && item.decoded.writeRd) begin
-                if (item.decoded.run matches RunLoadStore)
-                    result = tagged Invalid;
-                else
-                    result = tagged Valid item.exResult;
-            end
         end
 
         if (memFIFO.peek matches tagged Valid .item) begin
@@ -156,7 +144,7 @@ module mkCpu(Cpu);
     endfunction
 
     rule decodeInstr (getRegs matches tagged Valid { .rs1Val, .rs2Val });
-        $display("[%9d] [%08h] [ . . D . . . . ] decode", $time, decodeFIFO.first.npc);
+        $display("[%9d] [%08h] [ . . D . . . ] decode", $time, decodeFIFO.first.npc);
 
         decodeFIFO.deq;
         executeFIFO.enq(ControlExecute {
@@ -172,14 +160,13 @@ module mkCpu(Cpu);
     function exDec = exInp.decoded;
 
     rule executeAuipcLui (exDec.run == RunAuipcLui);
-        $display("[%9d] [%08h] [ . . . E . . . ] ex auipc/lui", $time, exInp.npc);
+        $display("[%9d] [%08h] [ . . . E . . ] ex auipc/lui", $time, exInp.npc);
         executeFIFO.deq;
 
         memFIFO.enq(ControlMem {
             decoded: exDec,
             npc: exInp.npc,
-            exResult: exDec.imm + (exDec.isAuipc ? exInp.npc : '0),
-            rs2Val: ?
+            exResult: exDec.imm + (exDec.isAuipc ? exInp.npc : '0)
         });
     endrule
 
@@ -187,7 +174,7 @@ module mkCpu(Cpu);
     rule executeJal (exDec.run == RunJal);
         let target = exInp.npc + exDec.imm;
 
-        $display("[%9d] [%08h] [ . . . E . . . ] ex jal %08h", $time, exInp.npc, target);
+        $display("[%9d] [%08h] [ . . . E . . ] ex jal %08h", $time, exInp.npc, target);
         executeFIFO.deq;
 
         fetchPc <= target;
@@ -198,8 +185,7 @@ module mkCpu(Cpu);
         memFIFO.enq(ControlMem {
             decoded: exDec,
             npc: exInp.npc,
-            exResult: exInp.npc + 4,
-            rs2Val: ?
+            exResult: exInp.npc + 4
         });
 
         dropCounter.flush;
@@ -209,7 +195,7 @@ module mkCpu(Cpu);
     rule executeJalr (exDec.run == RunJalr);
         let target = exInp.rs1Val + exDec.imm;
 
-        $display("[%9d] [%08h] [ . . . E . . . ] ex jalr %08h", $time, exInp.npc, target);
+        $display("[%9d] [%08h] [ . . . E . . ] ex jalr %08h", $time, exInp.npc, target);
         executeFIFO.deq;
 
         fetchPc <= target;
@@ -220,8 +206,7 @@ module mkCpu(Cpu);
         memFIFO.enq(ControlMem {
             decoded: exDec,
             npc: exInp.npc,
-            exResult: exInp.npc + 4,
-            rs2Val: ?
+            exResult: exInp.npc + 4
         });
 
         dropCounter.flush;
@@ -234,7 +219,7 @@ module mkCpu(Cpu);
     rule executeBranchTaken (exDec.run == RunBranch && branchTaken);
         let target = exInp.npc + exDec.imm;
 
-        $display("[%9d] [%08h] [ . . . E . . . ] ex branch taken %08h", $time, exInp.npc, target);
+        $display("[%9d] [%08h] [ . . . E . . ] ex branch taken %08h", $time, exInp.npc, target);
         executeFIFO.deq;
 
         fetchPc <= target;
@@ -245,15 +230,14 @@ module mkCpu(Cpu);
         memFIFO.enq(ControlMem {
             decoded: exDec,
             npc: exInp.npc,
-            exResult: ?,
-            rs2Val: ?
+            exResult: ?
         });
 
         dropCounter.flush;
     endrule
 
     rule executeBranchNotTaken (exDec.run == RunBranch && ! branchTaken);
-        $display("[%9d] [%08h] [ . . . E . . . ] ex branch not taken", $time, exInp.npc);
+        $display("[%9d] [%08h] [ . . . E . . ] ex branch not taken", $time, exInp.npc);
         executeFIFO.deq;
     endrule
 
@@ -266,40 +250,14 @@ module mkCpu(Cpu);
     );
 
     rule executeOp (exDec.run == RunOp);
-        $display("[%9d] [%08h] [ . . . E . . . ] ex op, result = %08h", $time, exInp.npc, aluResult);
+        $display("[%9d] [%08h] [ . . . E . . ] ex op, result = %08h", $time, exInp.npc, aluResult);
         executeFIFO.deq;
 
         memFIFO.enq(ControlMem {
             decoded: exDec,
             npc: exInp.npc,
-            exResult: aluResult,
-            rs2Val: ?
+            exResult: aluResult
         });
-    endrule
-
-    rule executeLoadStore (exDec.run == RunLoadStore);
-        $display("[%9d] [%08h] [ . . . E . . . ] ex load/store addr", $time, exInp.npc);
-        executeFIFO.deq;
-
-        memFIFO.enq(ControlMem {
-            decoded: exDec,
-            npc: exInp.npc,
-            exResult: exInp.rs1Val + exDec.imm,
-            rs2Val: exInp.rs2Val
-        });
-    endrule
-
-    // Memory stage
-    function memInp = memFIFO.first;
-    function memDec = memInp.decoded;
-
-    rule memNonMem (memDec.run != RunLoadStore);
-        $display("[%9d] [%08h] [ . . . . M . . ] no mem", $time, memInp.npc);
-        memFIFO.deq;
-
-        if (memDec.writeRd) begin
-            loadFIFO.enq(memInp);
-        end
     endrule
 
     function BusReq adjustBusReq(BusReq req);
@@ -311,33 +269,39 @@ module mkCpu(Cpu);
         };
     endfunction
 
-    rule memMem (memDec.run == RunLoadStore);
-        $display("[%9d] [%08h] [ . . . . M . . ] load/store %08h", $time, memInp.npc, memInp.exResult);
-        memFIFO.deq;
+    rule executeLoadStore (exDec.run == RunLoadStore);
+        $display("[%9d] [%08h] [ . . . E . . ] ex load/store addr", $time, exInp.npc);
+        executeFIFO.deq;
+
+        let addr = exInp.rs1Val + exDec.imm;
 
         memReqFIFO.enq(adjustBusReq(BusReq {
-            addr: memInp.exResult,
-            data: memInp.rs2Val,
-            bstrb: memDec.bstrb,
-            write: ! memDec.isLoad
+            addr: addr,
+            data: exInp.rs2Val,
+            bstrb: exDec.bstrb,
+            write: ! exDec.isLoad
         }));
 
-        loadFIFO.enq(memInp);
+        memFIFO.enq(ControlMem {
+            decoded: exDec,
+            npc: exInp.npc,
+            exResult: ?
+        });
     endrule
 
-    // Load stage
-    function loadInp = loadFIFO.first;
-    function loadDec = loadInp.decoded;
+    // Mem stage
+    function memInp = memFIFO.first;
+    function memDec = memInp.decoded;
 
-    rule loadNonMem (loadDec.run != RunLoadStore);
-        $display("[%9d] [%08h] [ . . . . . L . ] no mem", $time, loadInp.npc);
-        loadFIFO.deq;
+    rule memNonMem (memDec.run != RunLoadStore);
+        $display("[%9d] [%08h] [ . . . . M . ] no mem", $time, memInp.npc);
+        memFIFO.deq;
 
         writeFIFO.enq(ControlWrite {
-            npc: loadInp.npc,
-            write: loadDec.writeRd,
-            regNum: loadDec.rdNum,
-            data: loadInp.exResult
+            npc: memInp.npc,
+            write: memDec.writeRd,
+            regNum: memDec.rdNum,
+            data: memInp.exResult
         });
     endrule
 
@@ -363,16 +327,16 @@ module mkCpu(Cpu);
         return pack(result);
     endfunction
 
-    rule loadMem (loadDec.run == RunLoadStore);
-        $display("[%9d] [%08h] [ . . . . . L . ] load/store done", $time, loadInp.npc);
-        loadFIFO.deq;
+    rule memMem (memDec.run == RunLoadStore);
+        $display("[%9d] [%08h] [ . . . . M . ] load/store done", $time, memInp.npc);
+        memFIFO.deq;
         memRespFIFO.deq;
 
         writeFIFO.enq(ControlWrite {
-            npc: loadInp.npc,
-            write: loadDec.isLoad,
-            regNum: loadDec.rdNum,
-            data: adjustLoad(memRespFIFO.first, loadInp.exResult[1:0], loadDec.bstrb, loadDec.loadSigned)
+            npc: memInp.npc,
+            write: memDec.isLoad,
+            regNum: memDec.rdNum,
+            data: adjustLoad(memRespFIFO.first, memInp.exResult[1:0], memDec.bstrb, memDec.loadSigned)
         });
     endrule
 
@@ -381,12 +345,12 @@ module mkCpu(Cpu);
     rule writeback;
         writeFIFO.deq;
         if (writeInp.write) begin
-            $display("[%9d] [%08h] [ . . . . . . W ] wb reg[%2d] <- %08h", $time,
+            $display("[%9d] [%08h] [ . . . . . W ] wb reg[%2d] <- %08h", $time,
                 writeInp.npc, writeInp.regNum, writeInp.data);
 
             regFile.upd(writeInp.regNum, writeInp.data);
         end else begin
-            $display("[%9d] [%08h] [ . . . . . . W ] wb nothing", $time, writeInp.npc);
+            $display("[%9d] [%08h] [ . . . . . W ] wb nothing", $time, writeInp.npc);
         end
         instretCounter <= instretCounter + 1;
     endrule

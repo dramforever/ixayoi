@@ -18,14 +18,13 @@ $ make -f ../Makefile -C build ixayoi_axi_bsv.v # Generating Verilog
 
 ## Design
 
-Ixayoi uses a desigin similar to the classic 5-stage pipeline, but expands it to 7 stages for pipelined memory access:
+Ixayoi uses a desigin similar to the classic 5-stage pipeline, but expands it to 6 stages for pipelined instruction fetches:
 
 - `A`: Address: Generates instruction fetch requests
 - `F`: Fetch: Handles instruction fetch responses
 - `D`: Decode
-- `E`: Execute: Handles arithmetic, address calculation and branches
-- `M`: Memory: Generates data memory requests
-- `L`: Load: Handles data memory responses. Named 'load' because load operations get their results here.
+- `E`: Execute: Handles arithmetic, address calculation and branches, generates data memory requests
+- `M`: Memory: Handles data memory responses
 - `W`: Writeback
 
 ## Memory access
