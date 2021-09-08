@@ -34,11 +34,8 @@ typedef enum {
 module mkInstrCache(InstrCache);
     FIFO#(RReq#(Word))              axiReqFIFO <- mkBypassFIFO;
 
-    BRAM_Configure cacheCfg = defaultValue;
-    cacheCfg.memorySize = 1024;
-
-    BRAM1Port#(IC_Index, Maybe#(IC_Tag)) tagMem <- mkBRAM1Server(cacheCfg);
-    BRAM1Port#(IC_Addr, Word)       dataMem <- mkBRAM1Server(cacheCfg);
+    BRAM1Port#(IC_Index, Maybe#(IC_Tag)) tagMem <- mkBRAM1Server(defaultValue);
+    BRAM1Port#(IC_Addr, Word)       dataMem <- mkBRAM1Server(defaultValue);
 
     FIFO#(Word)                     tagPipe <- mkPipelineFIFO;
 
