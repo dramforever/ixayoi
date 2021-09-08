@@ -52,7 +52,8 @@ A wrapper, `src/ixayoi_axi_bsv.bsv`, wraps around the two to provide one AXI4 in
 
 # Todo list
 
-- [X] L1 I-cache and `fence.i`
+- [ ] L1 I-cache
+- [ ] `fence.i`
 - [ ] CSR
 - [ ] Interrupts, `ecall` and `ebreak`
 - [ ] Error handling (Bus error / Invalid instruction)
