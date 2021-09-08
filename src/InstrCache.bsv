@@ -24,6 +24,7 @@ function Tuple3#(IC_Tag, IC_Index, IC_Offset) addrToIC(Word addr);
 endfunction
 
 typedef enum {
+    ICS_Reset,
     ICS_Pipe,
     ICS_Refill,
     ICS_RefillDone
@@ -36,22 +37,38 @@ module mkInstrCache(InstrCache);
     BRAM_Configure cacheCfg = defaultValue;
     cacheCfg.memorySize = 1024;
 
-    BRAM1Port#(IC_Index, IC_Tag)    tagMem <- mkBRAM1Server(cacheCfg);
+    BRAM1Port#(IC_Index, Maybe#(IC_Tag)) tagMem <- mkBRAM1Server(cacheCfg);
     BRAM1Port#(IC_Addr, Word)       dataMem <- mkBRAM1Server(cacheCfg);
 
     FIFO#(Word)                     tagPipe <- mkPipelineFIFO;
 
-    Reg#(IC_State)                  state <- mkReg(ICS_Pipe);
+    Reg#(IC_State)                  state <- mkReg(ICS_Reset);
 
     Reg#(Word)                      curAddr <- mkReg(?);
     Reg#(Bit#(4))                   curWid <- mkReg(0);
 
-    rule tagMemResp if (state == ICS_Pipe);
+
+    Reg#(IC_Index)                  resetCounter <- mkReg(0);
+
+    rule clearTagMem (state == ICS_Reset);
+        tagMem.portA.request.put(BRAMRequest {
+            write: True,
+            address: resetCounter,
+            responseOnWrite: False,
+            datain: tagged Invalid
+        });
+        resetCounter <= resetCounter + 1;
+        if (resetCounter + 1 == 0) begin
+            state <= ICS_Pipe;
+        end
+    endrule
+
+    rule tagMemResp (state == ICS_Pipe);
         tagPipe.deq;
         let foundTag <- tagMem.portA.response.get;
         match { .tag, .index, .offset } = addrToIC(tagPipe.first);
 
-        (* split *) if (tag == foundTag) begin
+        (* split *) if (tagged Valid tag == foundTag) begin
             dataMem.portA.request.put(BRAMRequest {
                 write: False,
                 address: { index, offset[5:2] },
@@ -68,14 +85,14 @@ module mkInstrCache(InstrCache);
                 write: True,
                 address: index,
                 responseOnWrite: False,
-                datain: tag
+                datain: tagged Valid tag
             });
             state <= ICS_Refill;
             curAddr <= tagPipe.first;
         end
     endrule
 
-    rule refillDone if (state == ICS_RefillDone);
+    rule refillDone (state == ICS_RefillDone);
         match { .tag, .index, .offset } = addrToIC(curAddr);
 
         dataMem.portA.request.put(BRAMRequest {
