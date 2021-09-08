@@ -2,6 +2,7 @@ BSC := bsc
 SOURCE_DIR := ../src
 
 BSC_FLAGS += -show-schedule -warn-method-urgency -warn-action-shadowing -bdir . -info-dir . -simdir . -vdir .
+BSC_VERILOG_FLAGS += -opt-undetermined-vals -unspecified-to X
 
 .PHONY: all
 all: mkTestbench_bsim mkTestbench.v
@@ -14,7 +15,7 @@ mkTestbench.v: $(wildcard $(SOURCE_DIR)/*.bsv)
 	$(BSC) $(BSC_FLAGS) -verilog -u -p $(SOURCE_DIR):%/Libraries -g mkTestbench $(SOURCE_DIR)/Testbench.bsv
 
 ixayoi_axi_bsv.v: $(wildcard $(SOURCE_DIR)/*.bsv)
-	$(BSC) $(BSC_FLAGS) -verilog -u -p $(SOURCE_DIR):%/Libraries -g ixayoi_axi_bsv $(SOURCE_DIR)/ixayoi_axi_bsv.bsv
+	$(BSC) $(BSC_VERILOG_FLAGS) $(BSC_FLAGS) -verilog -u -p $(SOURCE_DIR):%/Libraries -g ixayoi_axi_bsv $(SOURCE_DIR)/ixayoi_axi_bsv.bsv
 
 .PHONY: sim
 sim: mkTestbench_bsim
