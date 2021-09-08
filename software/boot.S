@@ -2,8 +2,8 @@
 .global _start
 _start:
     li a0, 0xd0000000
-    li a1, 0xc0000000
-    li a2, 0xc0010000
+    li a1, 0x80000000
+    li a2, 0x80010000
 1:
     lw a3, 0(a0)
     sw a3, 0(a1)
@@ -20,7 +20,7 @@ _start:
 .global main
 main:
     call print
-    li a0, 100000000
+    li a0, 100000000 / 7 # Account for branch penalty
     call waste
     j main
 
@@ -45,37 +45,6 @@ msg:
     .string "Hello from Ixayoi!\n"
 
 waste:
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
-    addi a0, a0, -1
     addi a0, a0, -1
     bgtz a0, waste
     ret
