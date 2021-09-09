@@ -15,12 +15,12 @@ interface InstrCache;
 endinterface
 
 typedef Bit#(6)     IC_Offset;
-typedef Bit#(10)    IC_Index;
-typedef Bit#(16)    IC_Tag;
-typedef Bit#(14)    IC_Addr;
+typedef Bit#(8)     IC_Index;
+typedef Bit#(18)    IC_Tag;
+typedef Bit#(12)    IC_Addr;
 
 function Tuple3#(IC_Tag, IC_Index, IC_Offset) addrToIC(Word addr);
-    return tuple3(addr[31:16], addr[15:6], addr[5:0]);
+    return tuple3(addr[31:14], addr[13:6], addr[5:0]);
 endfunction
 
 typedef enum {
