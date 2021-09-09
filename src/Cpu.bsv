@@ -285,7 +285,7 @@ module mkCpu(Cpu);
         memFIFO.enq(ControlMem {
             decoded: exDec,
             npc: exInp.npc,
-            exResult: ?
+            exResult: addr
         });
     endrule
 
